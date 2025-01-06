@@ -27,12 +27,12 @@ class CookoBot(arcade.Window):
         self.chat_box = arcade.gui.UIBoxLayout(vertical=True, x=INSTRUCTION_TEXT_X, y=INSTRUCTION_TEXT_Y)
 
         # Créer le bouton de ramassage
-        pick_up_button = arcade.gui.UIFlatButton(text="Ramasser", width=BUTTON_WIDTH, style={'bg_color': arcade.color.MAUVE_TAUPE})
+        pick_up_button = arcade.gui.UIFlatButton(text="Ramasser", width=BUTTON_WIDTH, style=BUTTON_MAUVE)
         pick_up_button.on_click = self.action_pick
         self.action_box.add(pick_up_button.with_space_around(right=PADDING))
 
         # Créer le bouton de dépôt
-        drop_button = arcade.gui.UIFlatButton(text="Déposer", width=BUTTON_WIDTH, style={'bg_color': arcade.color.MAUVE_TAUPE})
+        drop_button = arcade.gui.UIFlatButton(text="Déposer", width=BUTTON_WIDTH, style=BUTTON_MAUVE)
         drop_button.on_click = self.action_drop
         self.action_box.add(drop_button)
 
@@ -42,12 +42,13 @@ class CookoBot(arcade.Window):
         self.chat_box.add(self.text_input)
 
         # Créer le bouton d'envoi
-        send_button = arcade.gui.UIFlatButton(text="Envoyer", width=BUTTON_WIDTH, style={'bg_color': arcade.color.MAUVE_TAUPE})
+        send_button = arcade.gui.UIFlatButton(text="Envoyer", width=BUTTON_WIDTH, style=BUTTON_MAUVE)
         send_button.on_click = self.send_instruction
         self.chat_box.add(send_button.with_space_around(top=PADDING+INSTRUCTION_BOX_PADDING))
 
         # Créer un checkbox pour activer le LLM
-        self.llm_checkbox = arcade.gui.UIFlatButton(text="Désactiver le LLM", width=2*BUTTON_WIDTH, height=35, style={'bg_color': arcade.color.TUSCANY})
+        self.llm_checkbox = arcade.gui.UIFlatButton(text="Désactiver le LLM", width=2*BUTTON_WIDTH, height=35, 
+                                                    style=BUTTON_TUSCANY)
         self.llm_checkbox.on_click = self.on_activation_llm_press
         self.chat_box.add(self.llm_checkbox.with_space_around(top=PADDING))
         
@@ -56,6 +57,7 @@ class CookoBot(arcade.Window):
         self.manager.enable()
         self.manager.add(self.action_box)
         self.manager.add(self.chat_box)
+
 
     def setup(self):
         """Initialisation de la carte et du personnage."""
@@ -82,6 +84,7 @@ class CookoBot(arcade.Window):
             fruit = random.choice(self.objects)
             self.items_on_map[(x, y)] = fruit
         
+
     def on_draw(self):
         """Rendu de l'écran."""
         arcade.start_render()
@@ -127,7 +130,6 @@ class CookoBot(arcade.Window):
         arcade.draw_rectangle_outline(MENU_X + MENU_WIDTH//2, INVENTORY_BOX_Y - INVENTORY_BOX_HEIGHT//2, MENU_WIDTH, INVENTORY_BOX_HEIGHT, arcade.color.MAUVE_TAUPE)
         for i, item in enumerate(self.inventory):
             arcade.draw_text(item, INVENTORY_TEXT_X, INVENTORY_TEXT_Y - INVENTORY_TEXT_HEIGHT*i, arcade.color.MAUVE_TAUPE, 16, font_name="Comic Sans MS")
-            # arcade.draw_text(item, INVENTORY_TEXT_X, INVENTORY_TEXT_Y - INVENTORY_TEXT_HEIGHT*i, arcade.color.MAUVE_TAUPE, 14, font_name="Comic Sans MS")
 
         # Afficher le chat
         arcade.draw_text("Instruction", MENU_X, INSTRUCTION_TITLE_Y, arcade.color.MAUVE_TAUPE, 16, font_name="Comic Sans MS")
@@ -135,6 +137,7 @@ class CookoBot(arcade.Window):
 
         # Afficher les boutons
         self.manager.draw()
+
 
     def on_mouse_press(self, x, y, button, modifiers):
         """Gestion des clics de souris.
@@ -157,6 +160,7 @@ class CookoBot(arcade.Window):
                 self.path_index = 0  # Réinitialise l'index de l'étape
                 self.action_move()
     
+
     def on_activation_llm_press(self, event=None):
         """Active ou désactive le LLM.
         
@@ -166,6 +170,7 @@ class CookoBot(arcade.Window):
         self.llm_activated = not self.llm_activated
         self.llm_checkbox.text = "Désactiver le LLM" if self.llm_activated else "Activer le LLM"
         print("LLM activé" if self.llm_activated else "LLM désactivé")
+
 
     def a_star(self, start_x, start_y, goal_x, goal_y):
         """Implémentation de l'algorithme A*.
@@ -216,6 +221,7 @@ class CookoBot(arcade.Window):
 
         return None  # Aucun chemin trouvé
 
+
     def move_along_path(self, delta_time):
         """Déplace le personnage d'une case le long du chemin calculé."""
         # Vérifie si le chemin n'est pas terminé
@@ -228,6 +234,7 @@ class CookoBot(arcade.Window):
         else:
             arcade.unschedule(self.move_along_path)  # Arrête la planification lorsque le déplacement est terminé
     
+
     def action_move(self, event=None):
         """Lance le déplacement du personnage vers une destination spécifiée.
         
@@ -238,6 +245,7 @@ class CookoBot(arcade.Window):
         self.action_count += 1  # Incrémente le compteur d'actions
         arcade.unschedule(self.move_along_path)  # Arrête le déplacement actuel
         arcade.schedule(self.move_along_path, MOVE_DELAY)  # Planifie la fonction de déplacement
+
 
     def action_pick(self, event=None):
         """Ramasse un objet sur la carte. Si l'inventaire est plein, dépose l'objet le plus ancien.
@@ -256,6 +264,7 @@ class CookoBot(arcade.Window):
                 del self.items_on_map[current_pos]  # Retirer l'objet de la carte
             self.inventory.append(item)  # Ajouter l'objet à l'inventaire
             self.action_count += 1  # Incrémente le compteur d'actions
+
 
     def action_drop(self, event=None):
         """Dépose un objet sur la carte. Si un objet est déjà présent, échange les objets.
@@ -282,6 +291,7 @@ class CookoBot(arcade.Window):
             self.items_on_map[current_pos] = item_to_drop # Le déposer sur la carte
             self.inventory.append(existing_item) # Ajouter l'objet existant à l'inventaire
     
+
     def send_instruction(self, event=None):
         """Envoie l'instruction de l'utilisateur pour exécution. Si le LLM est activé, utilise la réponse du LLM.
         Sinon, exécute l'action spécifiée par l'utilisateur.
@@ -340,6 +350,7 @@ class CookoBot(arcade.Window):
         # Efface le texte de l'entrée utilisateur
         self.text_input.clear()
         self.text_input.trigger_render()
+
 
 if __name__ == "__main__":
     window = CookoBot()
