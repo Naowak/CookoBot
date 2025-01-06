@@ -96,7 +96,7 @@ def make_request(prompt):
                 "Authorization": f"Bearer {os.getenv('API_KEY')}",
             },
             data=json.dumps({
-                "model": "meta-llama/llama-3.1-70b-instruct:free", # Optional
+                "model": "deepseek/deepseek-chat", # Optional
                 "messages": [
                     {
                         "role": "user",

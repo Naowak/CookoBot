@@ -10,6 +10,7 @@ from llm_request import make_request, make_prompt, extract_thoughts_and_command
 class CookoBot(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "CookoBot")
+        """Initialisation de la fenêtre de jeu."""
         self.player = None
         self.inventory = []
         self.objects = ['Banane', 'Pomme', 'Poire']
@@ -19,6 +20,7 @@ class CookoBot(arcade.Window):
         self.step_count = 0  # Compteur de pas
         self.action_count = 0  # Compteur d'actions
         self.inventory = deque(maxlen=INVENTORY_SIZE)  # Inventaire limité à 3 objets
+        self.llm_activated = True
 
         # Create a horizontale BoxGroup to align buttons
         self.action_box = arcade.gui.UIBoxLayout(vertical=False, x=MENU_X, y=INVENTORY_BUTTON_Y)
@@ -44,6 +46,11 @@ class CookoBot(arcade.Window):
         send_button.on_click = self.send_instruction
         self.chat_box.add(send_button.with_space_around(top=PADDING+INSTRUCTION_BOX_PADDING))
 
+        # Créer un checkbox pour activer le LLM
+        self.llm_checkbox = arcade.gui.UIFlatButton(text="Désactiver le LLM", width=2*BUTTON_WIDTH, height=35, style={'bg_color': arcade.color.TUSCANY})
+        self.llm_checkbox.on_click = self.on_activation_llm_press
+        self.chat_box.add(self.llm_checkbox.with_space_around(top=PADDING))
+        
         # Créer le gestionnaire d'interface utilisateur
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
@@ -130,6 +137,14 @@ class CookoBot(arcade.Window):
         self.manager.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
+        """Gestion des clics de souris.
+        
+        Args:
+            x (int): Coordonnée x du clic de souris.
+            y (int): Coordonnée y du clic de souris.
+            button (int): Bouton de la souris cliqué.
+            modifiers (int): Modificateurs de la touche de la souris.
+        """
         # Convertir les coordonnées de la souris en coordonnées de la grille
         grid_x = (x - PADDING) // TILE_SIZE
         grid_y = (y - PADDING) // TILE_SIZE
@@ -141,9 +156,26 @@ class CookoBot(arcade.Window):
             if self.path:
                 self.path_index = 0  # Réinitialise l'index de l'étape
                 self.action_move()
+    
+    def on_activation_llm_press(self, event=None):
+        """Active ou désactive le LLM.
+        
+        Args:
+            event (arcade.gui.UIEvent): Événement de l'interface utilisateur.
+        """
+        self.llm_activated = not self.llm_activated
+        self.llm_checkbox.text = "Désactiver le LLM" if self.llm_activated else "Activer le LLM"
+        print("LLM activé" if self.llm_activated else "LLM désactivé")
 
     def a_star(self, start_x, start_y, goal_x, goal_y):
-        """Implémentation de l'algorithme A*."""
+        """Implémentation de l'algorithme A*.
+        
+        Args:
+            start_x (int): Coordonnée x de départ.
+            start_y (int): Coordonnée y de départ.
+            goal_x (int): Coordonnée x de destination.
+            goal_y (int): Coordonnée y de destination.
+        """
         def heuristic(x1, y1, x2, y2):
             return abs(x1 - x2) + abs(y1 - y2)
 
@@ -184,8 +216,8 @@ class CookoBot(arcade.Window):
 
         return None  # Aucun chemin trouvé
 
-    def move_along_path(self, delta_time=MOVE_DELAY):
-        """Déplace le personnage le long du chemin avec un délai."""
+    def move_along_path(self, delta_time):
+        """Déplace le personnage d'une case le long du chemin calculé."""
         # Vérifie si le chemin n'est pas terminé
         if self.path_index < len(self.path):
             # Déplace le personnage à l'étape suivante
@@ -197,13 +229,22 @@ class CookoBot(arcade.Window):
             arcade.unschedule(self.move_along_path)  # Arrête la planification lorsque le déplacement est terminé
     
     def action_move(self, event=None):
+        """Lance le déplacement du personnage vers une destination spécifiée.
+        
+        Args:
+            event (arcade.gui.UIEvent): Événement de l'interface utilisateur.
+        """
         # Execute le mouvement
         self.action_count += 1  # Incrémente le compteur d'actions
         arcade.unschedule(self.move_along_path)  # Arrête le déplacement actuel
         arcade.schedule(self.move_along_path, MOVE_DELAY)  # Planifie la fonction de déplacement
 
     def action_pick(self, event=None):
-        """Ramasse un objet sur la carte."""
+        """Ramasse un objet sur la carte. Si l'inventaire est plein, dépose l'objet le plus ancien.
+        
+        Args:
+            event (arcade.gui.UIEvent): Événement de l'interface utilisateur.
+        """
         # Vérifie si le joueur est sur une case avec un objet
         current_pos = (self.player['x'], self.player['y'])
         if current_pos in self.items_on_map:
@@ -217,7 +258,12 @@ class CookoBot(arcade.Window):
             self.action_count += 1  # Incrémente le compteur d'actions
 
     def action_drop(self, event=None):
-        """Dépose un objet sur la carte."""
+        """Dépose un objet sur la carte. Si un objet est déjà présent, échange les objets.
+        Par défaut, dépose l'objet le plus ancien de l'inventaire.
+        
+        Args:
+            event (arcade.gui.UIEvent): Événement de l'interface utilisateur.
+        """
         # Vérifie si l'inventaire n'est pas vide
         if not self.inventory:
             return None
@@ -237,23 +283,30 @@ class CookoBot(arcade.Window):
             self.inventory.append(existing_item) # Ajouter l'objet existant à l'inventaire
     
     def send_instruction(self, event=None):
+        """Envoie l'instruction de l'utilisateur pour exécution. Si le LLM est activé, utilise la réponse du LLM.
+        Sinon, exécute l'action spécifiée par l'utilisateur.
+        
+        Args:
+            event (arcade.gui.UIEvent): Événement de l'interface utilisateur.
+        """
         print("Instruction de l'utilisateur:", self.text_input.text)
-
-        # Demande au LLM de produire la commande
-        prompt = make_prompt(self.text_input.text, self.items_on_map, self.player)
-        answer = make_request(prompt)
-        thoughts, action, coordinates = extract_thoughts_and_command(answer)
         
-        # Affiche les informations extraites
-        print("THOUGHTS:", thoughts)
-        print("ACTION:", action)
-        print("COORDINATES:", coordinates)
-        if thoughts is None or action is None:
-            print("Erreur lors de l'extraction des informations")
-            return None
-        
-        # Update la valeur de l'entrée utilisateur par la commande extraite de la réponse du LLM
-        self.text_input.text = (action + " " + coordinates) if coordinates else action
+        if self.llm_activated:
+            # Demande au LLM de produire la commande
+            prompt = make_prompt(self.text_input.text, self.items_on_map, self.player)
+            answer = make_request(prompt)
+            thoughts, action, coordinates = extract_thoughts_and_command(answer)
+            
+            # Affiche les informations extraites
+            print("THOUGHTS:", thoughts)
+            print("ACTION:", action)
+            print("COORDINATES:", coordinates)
+            if thoughts is None or action is None:
+                print("Erreur lors de l'extraction des informations")
+                return None
+            
+            # Update la valeur de l'entrée utilisateur par la commande extraite de la réponse du LLM
+            self.text_input.text = (action + " " + coordinates) if coordinates else action
         
         # Actions possibles
         actions = {
@@ -261,6 +314,7 @@ class CookoBot(arcade.Window):
             'DROP': self.action_drop,
             'MOVE': self.action_move,
         }
+
         # Extrait l'action de l'entrée utilisateur
         text_split = self.text_input.text.split(" ")
         if len(text_split) == 2:
@@ -283,6 +337,7 @@ class CookoBot(arcade.Window):
             # Exécute l'action
             actions[action]()
 
+        # Efface le texte de l'entrée utilisateur
         self.text_input.clear()
         self.text_input.trigger_render()
 
