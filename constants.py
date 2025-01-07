@@ -1,3 +1,5 @@
+import arcade
+
 # Map
 PADDING = 25
 NB_TILES = 15
@@ -54,3 +56,5 @@ INSTRUCTION_BUTTON_HEIGHT = BUTTON_HEIGHT
 # Other
 MOVE_DELAY = 0.2  # 250 ms
 BACKGROUND_COLOR = (250, 235, 235)
+BUTTON_MAUVE = {'bg_color': arcade.color.MAUVE_TAUPE}
+BUTTON_TUSCANY = {'bg_color': arcade.color.TUSCANY}
