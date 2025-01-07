@@ -69,7 +69,7 @@ def make_request(prompt):
 
     # Check if the request was successful
     if 'error' in response:
-        raise Exception(f"Failed to make the request: {response.json()}")
+        raise Exception(f"Failed to make the request: {response}")
 
     # Get the answer from the response
     answer = response['choices'][0]['message']['content']
