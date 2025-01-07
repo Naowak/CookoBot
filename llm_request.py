@@ -73,5 +73,4 @@ def make_request(prompt):
 
     # Get the answer from the response
     answer = response['choices'][0]['message']['content']
-    print(answer)
     return answer

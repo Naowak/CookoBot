@@ -6,6 +6,7 @@ import arcade.gui
 from collections import deque
 from constants import *
 from llm_request import make_request, make_prompt, extract_thoughts_and_command
+import traceback
 
 class CookoBot(arcade.Window):
     def __init__(self):
@@ -299,25 +300,29 @@ class CookoBot(arcade.Window):
         Args:
             event (arcade.gui.UIEvent): Événement de l'interface utilisateur.
         """
-        print("Instruction de l'utilisateur:", self.text_input.text)
+        print("\n>>> INSTRUCTION DE L'UTILISATEUR\n" + self.text_input.text)
         
         if self.llm_activated:
-            # Demande au LLM de produire la commande
-            prompt = make_prompt(self.text_input.text, self.items_on_map, self.player)
-            answer = make_request(prompt)
-            thoughts, action, coordinates = extract_thoughts_and_command(answer)
-            
-            # Affiche les informations extraites
-            print("THOUGHTS:", thoughts)
-            print("ACTION:", action)
-            print("COORDINATES:", coordinates)
-            if thoughts is None or action is None:
-                print("Erreur lors de l'extraction des informations")
-                return None
-            
-            # Update la valeur de l'entrée utilisateur par la commande extraite de la réponse du LLM
-            self.text_input.text = (action + " " + coordinates) if coordinates else action
-        
+            try:
+                # Demande au LLM de produire la commande
+                prompt = make_prompt(self.text_input.text, self.items_on_map, self.player)
+                answer = make_request(prompt)
+                print("--> REPONSE DU LLM\n" + answer)
+                thoughts, action = extract_thoughts_and_command(answer)
+                
+                # Affiche les informations extraites
+                if thoughts is None or action is None:
+                    print("Erreur lors de l'extraction des informations")
+                    return None
+                
+                # Update la valeur de l'entrée utilisateur par la commande extraite de la réponse du LLM
+                self.text_input.text = action
+
+            except Exception as e:
+                print('')
+                traceback.print_exc()
+                return 
+                    
         # Actions possibles
         actions = {
             'PICK': self.action_pick,
@@ -325,7 +330,7 @@ class CookoBot(arcade.Window):
             'MOVE': self.action_move,
         }
 
-        # Extrait l'action de l'entrée utilisateur
+        # Extrait l'action et les coordonnées de l'entrée utilisateur
         text_split = self.text_input.text.split(" ")
         if len(text_split) == 2:
             action, coordinates = text_split
@@ -346,6 +351,9 @@ class CookoBot(arcade.Window):
 
             # Exécute l'action
             actions[action]()
+        else:
+            print(f"Erreur: Action {action} non valide")
+            return None
 
         # Efface le texte de l'entrée utilisateur
         self.text_input.clear()
@@ -355,4 +363,5 @@ class CookoBot(arcade.Window):
 if __name__ == "__main__":
     window = CookoBot()
     window.setup()
+    print('Bienvenue dans CookoBot !')
     arcade.run()
