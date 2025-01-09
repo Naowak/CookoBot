@@ -74,3 +74,9 @@ Votre mission est de :
 - Expérimenter avec différents types d'instructions et évaluer comment le modèle raisonne et répond.
 - Modifier et améliorer le code pour ajouter de nouvelles fonctionnalités ou pour rendre le jeu plus interactif.
 
+
+# Dépôt github d'étudiant
+
+https://github.com/ClotaireENSC/DrawingBotLLM
+https://github.com/11gar/CookoBot
+https://github.com/Z3ZEL/CookoBot
