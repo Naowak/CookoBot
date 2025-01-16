@@ -77,6 +77,10 @@ Votre mission est de :
 
 # Dépôt github d'étudiant
 
-https://github.com/ClotaireENSC/DrawingBotLLM
-https://github.com/11gar/CookoBot
-https://github.com/Z3ZEL/CookoBot
+https://github.com/11gar/CookoBot  
+https://github.com/Z3ZEL/CookoBot  
+https://github.com/ClotaireENSC/DrawingBotLLM  
+https://github.com/RedzCode/Bot_LLM_FarmerGuy  
+https://github.com/ElouarnLC/AgriBot  
+https://github.com/moapatoa/cwassant_bot  
+
